@@ -1,345 +1,335 @@
-import React, { useState, useEffect, useRef } from 'react';
-import styled from 'styled-components';
+import React, {
+  useState,
+  useEffect,
+  useRef
+} from 'react';
+import ReactDOM from 'react-dom';
 
-// ===============================================================================================
-// Styled Components
-// ===============================================================================================
-const MainContainer = styled.div`
-    display: flex;
-    justify-content: center;
-    height: 100vh;
-    width: 100%;
-`;
+const NavBar = ({ changeMode }) => {
+  const [temp, setTemp] = useState(0);
+  // 필요한 요청 파라미터를 조립하여 api로 부터 데이터 받아와 업데이트하는 함수
+  const getWeather = () => {
+      const key =
+          "paJ%2BM8y80vWX8Gu5RWTDurJ0y5rQCX4tjEwLh0F%2FwfUABNbw%2BV2iJD%2FBahqq08K%2BvzgPyAU0GFZ84LmVfEDPgA%3D%3D";
 
-const ContentWrapper = styled.div`
-    width: 1000px;
-    display: flex;
-    flex-direction: column;
-`;
+      const dd = new Date();
+      const y = dd.getFullYear();
+      const m = ("0" + (dd.getMonth() + 1)).slice(-2);
+      const d = ("0" + dd.getDate()).slice(-2);
+      const ds = y + m + d;
 
-const NavigationBar = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-`;
+      const dd2 = new Date();
+      const h = ("0" + dd2.getHours()).slice(-2);
+      const ts = `${h}00`;
 
-const BrandName = styled.h1`
-    font-size: 22px;
-    font-weight: bold;
-`;
+      var url =
+          "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst?serviceKey= " +
+          key +
+          "&pageNo=1&numOfRows=1000&dataType=JSON" +
+          "&base_date=" +
+          ds +
+          "&base_time=" +
+          ts +
+          "&nx=67&ny=100";
 
-const NavigationLinks = styled.ul`
-    display: flex;
-    gap: 20px;
-`;
+      fetch(url)
+          .then((res) => res.json())
+          .then((data) => {
+              console.log(data.response.body.items.item);
+              const itemArr = data.response.body.items.item;
+              const result = {};
+              itemArr.forEach((item) => {
+                  if (item.category === "T1H") {
+                      setTemp(item.obsrValue);
+                  }
+              });
+          })
+          .catch((err) => console.log(err));
+  };
 
-const NavigationLink = styled.a`
-    color: #333;
-    text-decoration: none;
-    &:hover {
-        color: red;
-    }
-`;
+  // 컴포넌트 마운트시 날짜를 세팅하고 1시간 간격으로 getWeather함수를 실행하게 해줌
+  useEffect(() => {
+      getWeather();
+      const interval = setInterval(() => {
+          getWeather();
+      }, 1000 * 60 * 60);
 
-const TemperatureDisplay = styled.div`
-    display: ${({ hidden }) => (hidden ? 'none' : 'block')};
-`;
+      return () => clearInterval(interval);
+  }, []);
 
-const ItemListContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-`;
-
-const ItemList = styled.ul`
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 20px;
-    width: 100%;
-    max-width: 700px;
-`;
-
-const ItemCard = styled.li`
-    background-color: #f0f0f0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    max-width: 30%;
-    height: 250px;
-    padding: 10px;
-    cursor: pointer;
-    &:hover {
-        background-color: #666;
-        color: white;
-    }
-`;
-
-const FormContainer = styled.div`
-    display: flex;
-    justify-content: center;
-`;
-
-const FormWrapper = styled.div`
-    width: 700px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-`;
-
-const TextInput = styled.input`
-    border: 1px solid #ddd;
-    padding: 5px;
-`;
-
-const TextArea = styled.textarea`
-    border: 1px solid #ddd;
-    height: 200px;
-    padding: 5px;
-`;
-
-const ButtonGroup = styled.ul`
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-`;
-
-const Button = styled.li`
-    cursor: pointer;
-    &:hover {
-        color: red;
-    }
-`;
-
-// ===============================================================================================
-// NavigationBar Component
-// ===============================================================================================
-const NavigationBarComponent = ({ onModeChange }) => {
-    const [currentTemperature, setCurrentTemperature] = useState(0);
-
-    const constructWeatherUrl = (params) => {
-        const { apiKey, format, date, time, x, y } = params;
-        return `https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst?serviceKey=${apiKey}&pageNo=1&numOfRows=1000&dataType=${format}&base_date=${date}&base_time=${time}&nx=${x}&ny=${y}`;
-    };
-
-    const retrieveWeatherData = (url) => {
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                const items = data.response.body.items.item;
-                const temperatureItem = items.find(item => item.category === "T1H");
-                if (temperatureItem) setCurrentTemperature(temperatureItem.obsrValue);
-            })
-            .catch(error => console.error(error));
-    };
-
-    const updateWeather = () => {
-        const apiKey = "paJ%2BM8y80vWX8Gu5RWTDurJ0y5rQCX4tjEwLh0F%2FwfUABNbw%2BV2iJD%2FBahqq08K%2BvzgPyAU0GFZ84LmVfEDPgA%3D%3D";
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = ("0" + (today.getMonth() + 1)).slice(-2);
-        const day = ("0" + today.getDate()).slice(-2);
-        const formattedDate = `${year}${month}${day}`;
-        const hour = ("0" + today.getHours()).slice(-2);
-        const time = `${hour}00`;
-
-        const params = {
-            apiKey,
-            format: "JSON",
-            date: formattedDate,
-            time,
-            x: 67,
-            y: 100
-        };
-
-        const url = constructWeatherUrl(params);
-        retrieveWeatherData(url);
-    };
-
-    useEffect(() => {
-        updateWeather();
-        const weatherInterval = setInterval(updateWeather, 1000 * 60 * 60);
-        return () => clearInterval(weatherInterval);
-    }, []);
-
-    return (
-        <NavigationBar>
-            <BrandName>
-                <a href="#">Logo</a>
-            </BrandName>
-            <TemperatureDisplay hidden={currentTemperature === 0}>
-                Current Temperature: {currentTemperature}°C
-            </TemperatureDisplay>
-            <NavigationLinks>
-                <NavigationLink href="#" onClick={() => onModeChange(2)}>Create Post</NavigationLink>
-                <NavigationLink href="#">Login</NavigationLink>
-                <NavigationLink href="#">Sign Up</NavigationLink>
-            </NavigationLinks>
-        </NavigationBar>
-    );
+  return (
+      <>
+          <div className="w-[100%] flex sm:flex-row sm:justify-between flex-col items-center p-[10px] border-b">
+              <h1 className="font-bold text-[22px]">
+                  <a href="#">Logo</a>
+              </h1>
+              <div>현재기온 : {temp}도</div>
+              <div>
+                  <ul className="flex gap-5">
+                      <li>
+                          <a
+                              className="hover:text-red-500"
+                              href="#"
+                              onClick={() => {
+                                  changeMode(2);
+                              }}
+                          >
+                              글 작성
+                          </a>
+                      </li>
+                      <li>
+                          <a href="#" className="hover:text-red-500">
+                              Login
+                          </a>
+                      </li>
+                      <li>
+                          <a href="#" className="hover:text-red-500">
+                              Sign Up
+                          </a>
+                      </li>
+                  </ul>
+              </div>
+          </div>
+      </>
+  );
 };
 
 // ===============================================================================================
-// ItemCard Component
-// ===============================================================================================
-const ItemCardComponent = ({ post, onModeChange, onPostClick }) => (
-    <ItemCard onClick={() => {
-        onModeChange(1);
-        onPostClick(post);
-    }}>
-        <p>{post.title}</p>
-    </ItemCard>
-);
 
 // ===============================================================================================
-// ItemList Component
+// 게시물 목록에서 하나의 게시물 아이템 컴포넌트
 // ===============================================================================================
-const ItemListComponent = ({ onModeChange, currentPage, onPostClick }) => {
-    const [items, setItems] = useState([]);
 
-    const fetchItems = () => {
-        fetch(`http://localhost:8999/api/test?page=${currentPage}`)
-            .then(response => response.json())
-            .then(data => setItems(prevItems => [...prevItems, ...data.data.content]));
-    };
+const PostItem = ({ post, changeMode, clickPost }) => {
+  return (
+      <li
+          className="bg-gray-300 flex justify-center items-center w-[100%] sm:w-[30%] h-[250px] hover:text-white hover:bg-gray-600 hover:cursor-pointer px-[10px]"
+          onClick={() => {
+              changeMode(1);
+              clickPost(post);
+          }}
+      >
+          <p>{post.title}</p>
+      </li>
+  );
+};
+// ===============================================================================================
 
-    useEffect(() => {
-        fetchItems();
-    }, [currentPage]);
+// ===============================================================================================
+// 게시물 목록 컴포넌트
+// ===============================================================================================
+const PostList = ({ changeMode, currentPage, clickPost }) => {
+  const [posts, setPosts] = useState([]);
+  useEffect(() => {
+      fetch(`http://localhost:8999/api/test?page=${currentPage}`)
+          .then((res) => {
+              return res.json();
+          })
+          .then((data) => {
+              setPosts([...posts, ...data.data.content]);
+          });
+  }, [currentPage]);
 
-    return (
-        <ItemListContainer>
-            <ItemList>
-                {items.map((item, idx) => (
-                    <ItemCardComponent
-                        key={idx}
-                        post={item}
-                        onModeChange={onModeChange}
-                        onPostClick={onPostClick}
-                    />
-                ))}
-            </ItemList>
-        </ItemListContainer>
-    );
+  return (
+      <div className="flex flex-col justify-center items-center">
+          <ul className="flex flex-wrap gap-5 w-[300px] sm:w-[700px] p-[20px]">
+              {posts.map((item, index) => {
+                  return (
+                      <PostItem
+                          key={index}
+                          post={item}
+                          changeMode={changeMode}
+                          clickPost={clickPost}
+                      />
+                  );
+              })}
+          </ul>
+      </div>
+  );
 };
 
-// ===============================================================================================
-// FormComponent (Detail) Component
-// ===============================================================================================
-const FormComponent = ({ onModeChange, currentPost }) => {
-    const [title, setTitle] = useState("");
-    const [content, setContent] = useState("");
+const Detail = ({ changeMode, target }) => {
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
 
-    useEffect(() => {
-        if (currentPost) {
-            setTitle(currentPost.title);
-            setContent(currentPost.content);
-        } else {
-            setTitle("");
-            setContent("");
-        }
-    }, [currentPost]);
+  useEffect(() => {
+      setTitle(target == null ? "" : target.title);
+      setContent(target == null ? "" : target.content);
+  }, [target]);
 
-    const handleUpdate = () => {
-        fetch("http://localhost:8999/api/test", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: currentPost.id, title, content })
-        });
-    };
+  const updatePost = () => {
+      fetch("http://localhost:8999/api/test", {
+          method: "PUT",
+          headers: {
+              "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+              id: target.id,
+              title: title,
+              content: content
+          })
+      });
+  };
 
-    const handleDelete = () => {
-        fetch("http://localhost:8999/api/test", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: currentPost.id })
-        }).then(response => {
-            if (response.ok) onModeChange(0);
-        });
-    };
+  const deletePost = () => {
+      fetch("http://localhost:8999/api/test", {
+          method: "DELETE",
+          headers: {
+              "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+              id: target.id
+          })
+      }).then((res) => {
+          if (res.ok) {
+              changeMode(0);
+          } else {
+              console.log("failed");
+          }
+      });
+  };
 
-    const handleCreate = () => {
-        fetch("http://localhost:8999/api/test", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title, content })
-        }).then(response => {
-            if (response.ok) onModeChange(0);
-        });
-    };
+  const createPost = () => {
+      fetch("http://localhost:8999/api/test", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+              title: title,
+              content: content
+          })
+      }).then((res) => {
+          if (res.ok) {
+              changeMode(0);
+          } else {
+              console.log("failed");
+          }
+      });
+  };
 
-    return (
-        <FormContainer>
-            <FormWrapper>
-                <div>
-                    <span>Title</span>
-                    <TextInput
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <span>Content</span>
-                    <TextArea
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                    />
-                </div>
-                <ButtonGroup>
-                    {currentPost ? (
-                        <>
-                            <Button onClick={handleUpdate}>Update</Button>
-                            <Button onClick={handleDelete}>Delete</Button>
-                            <Button onClick={() => onModeChange(0)}>Back to List</Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button onClick={handleCreate}>Create</Button>
-                            <Button onClick={() => onModeChange(0)}>Cancel</Button>
-                        </>
-                    )}
-                </ButtonGroup>
-            </FormWrapper>
-        </FormContainer>
-    );
+  return (
+      <div className="flex justify-center">
+          <div className="w-[700px] flex-col gap-3">
+              <div className="flex flex-col">
+                  <span>제목</span>
+                  <input
+                      className="border"
+                      type="text"
+                      value={title}
+                      onChange={(e) => {
+                          setTitle(e.target.value);
+                      }}
+                  />
+              </div>
+              <div className="flex flex-col">
+                  <span>내용</span>
+                  <textarea
+                      className="border-2 h-[200px]"
+                      onChange={(e) => {
+                          setContent(e.target.value);
+                      }}
+                      value={content}
+                  />
+              </div>
+              <ul className="flex justify-end gap-2">
+                  {target != null ? (
+                      <block>
+                          <li
+                              className="hover:text-red-500 hover:cursor-pointer"
+                              onClick={updatePost}
+                          >
+                              수정
+                          </li>
+                          <li
+                              className="hover:text-red-500 hover:cursor-pointer"
+                              onClick={deletePost}
+                          >
+                              삭제
+                          </li>
+                          <li
+                              className="hover:text-red-500 hover:cursor-pointer"
+                              onClick={() => {
+                                  changeMode(0);
+                              }}
+                          >
+                              목록으로
+                          </li>
+                      </block>
+                  ) : (
+                      <block>
+                          <li
+                              className="hover:text-red-500 hover:cursor-pointer"
+                              onClick={createPost}
+                          >
+                              등록
+                          </li>
+                          <li
+                              className="hover:text-red-500 hover:cursor-pointer"
+                              onClick={() => {
+                                  changeMode(0);
+                              }}
+                          >
+                              취소
+                          </li>
+                      </block>
+                  )}
+              </ul>
+          </div>
+      </div>
+  );
 };
 
-// ===============================================================================================
-// Main Board Component
-// ===============================================================================================
-const BoardApp = () => {
-    const scrollEndRef = useRef(false);
-    const [viewMode, setViewMode] = useState(0); // 0 - List, 1 - Detail, 2 - Create
-    const [currentPage, setCurrentPage] = useState(1);
-    const [selectedPost, setSelectedPost] = useState(null);
+const Board = () => {
+  const hasReachedEnd = useRef(false);
+  const [mode, setMode] = useState(0); // 0 - list, 1 - update detail, 2 - create detail
+  const [page, setPage] = useState(0);
+  const [detailTarget, setDetailTarget] = useState(null);
 
-    const handleScroll = () => {
-        if (scrollEndRef.current) return;
-        const bottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight;
-        if (bottom) {
-            setCurrentPage(prevPage => prevPage + 1);
-        }
-    };
+  // 각 화면 전환을 위한 함수
+  const changeMode = (targetMode) => {
+      if (targetMode == 0) {
+          setPage(0);
+      }
+      setMode(targetMode);
+  };
 
-    useEffect(() => {
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+  // 게시물을 선택하면 Detail로 넘겨주기 위한 함수
+  const clickPost = (post) => {
+      setDetailTarget(post);
+  };
 
-    return (
-        <MainContainer>
-            <ContentWrapper>
-                <NavigationBarComponent onModeChange={setViewMode} />
-                {viewMode === 0 && <ItemListComponent onModeChange={setViewMode} currentPage={currentPage} onPostClick={setSelectedPost} />}
-                {viewMode === 1 && <FormComponent onModeChange={setViewMode} currentPost={selectedPost} />}
-                {viewMode === 2 && <FormComponent onModeChange={setViewMode} currentPost={null} />}
-            </ContentWrapper>
-        </MainContainer>
-    );
+  // 각 모드에 따라 화면을 다르게 렌더링하기 위한 함수
+  const switchRender = (mode) => {
+      switch (mode) {
+          case 0:
+              return (
+                  <PostList
+                      changeMode={changeMode}
+                      currentPage={page}
+                      clickPost={clickPost}
+                  />
+              );
+          case 1:
+              return <Detail changeMode={changeMode} target={detailTarget} />;
+          case 2:
+              return <Detail changeMode={changeMode} target={null} />;
+          default:
+              return <p>Error</p>;
+      }
+  };
+
+  return (
+      <>
+          <div className="flex justify-center">
+              <div className="container h-[100%vh] w-[200px] sm:w-[1000px]">
+                  <NavBar changeMode={changeMode} />
+                  {switchRender(mode)}
+              </div>
+          </div>
+      </>
+  );
 };
+// ===============================================================================================
 
-export default BoardApp;
+export default Board;
