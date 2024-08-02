@@ -47,15 +47,6 @@ const NavBar = ({ changeMode }) => {
           .catch((err) => console.log(err));
   };
 
-  // 컴포넌트 마운트시 날짜를 세팅하고 1시간 간격으로 getWeather함수를 실행하게 해줌
-  useEffect(() => {
-      getWeather();
-      const interval = setInterval(() => {
-          getWeather();
-      }, 1000 * 60 * 60);
-
-      return () => clearInterval(interval);
-  }, []);
 
   return (
       <>
