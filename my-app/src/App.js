@@ -7,23 +7,6 @@ import React, {
 // import reactRouterDom from "https://cdn.skypack.dev/react-router-dom";
 // ===============================================================================================
 // 현재 날짜와 시간 가져오는 함수. API를 호출할 때 필요
-const getCurrentDate = () => {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = ("0" + (date.getMonth() + 1)).slice(-2);
-    const day = ("0" + date.getDate()).slice(-2);
-    const dateStr = year + month + day;
-
-    return dateStr;
-};
-
-const getCurrentTime = () => {
-    const date = new Date();
-    const hours = ("0" + date.getHours()).slice(-2);
-    const timeStr = `${hours}00`;
-
-    return timeStr;
-};
 // ===============================================================================================
 
 // ===============================================================================================
@@ -59,11 +42,21 @@ const NavBar = ({ changeMode }) => {
         const key =
             "paJ%2BM8y80vWX8Gu5RWTDurJ0y5rQCX4tjEwLh0F%2FwfUABNbw%2BV2iJD%2FBahqq08K%2BvzgPyAU0GFZ84LmVfEDPgA%3D%3D";
 
+        const dd = new Date();
+        const y = dd.getFullYear();
+        const m = ("0" + (dd.getMonth() + 1)).slice(-2);
+        const d = ("0" + dd.getDate()).slice(-2);
+        const ds = y + m + d;
+
+        const dd2 = new Date();
+        const h = ("0" + dd2.getHours()).slice(-2);
+        const ts = `${h}00`;
+
         const weatherParam = {
             key: key,
             type: "JSON",
-            date: getCurrentDate(),
-            time: getCurrentTime(),
+            date: ds,
+            time: ts,
             nx: 67, // 대전 둔산동 x 좌표
             ny: 100 // 대전 둔산동 y 좌표
         };
